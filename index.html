@@ -1110,6 +1110,102 @@ function timeAgo(ts) {
   return Math.floor(s/86400) + ' 天前';
 }
 
+// ==================== Paste (XMind / Tab-indented) ====================
+document.addEventListener('paste', e => {
+  // Skip if editing a node or input
+  if (document.activeElement?.contentEditable === 'true' ||
+      document.activeElement?.tagName === 'INPUT' ||
+      document.activeElement?.tagName === 'TEXTAREA') return;
+
+  const data = getData();
+  if (!data) return;
+
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!text || !text.trim()) return;
+
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length === 0) return;
+
+  // Detect indent style: tabs or spaces
+  let indentUnit = '\t';
+  let spaceIndent = 0;
+  for (const line of lines) {
+    const match = line.match(/^( +)/);
+    if (match) {
+      const len = match[1].length;
+      if (!spaceIndent || len < spaceIndent) spaceIndent = len;
+    }
+  }
+
+  function getDepth(line) {
+    if (line.startsWith('\t')) {
+      let d = 0;
+      while (d < line.length && line[d] === '\t') d++;
+      return d;
+    }
+    if (spaceIndent && line.startsWith(' ')) {
+      const match = line.match(/^( +)/);
+      return match ? Math.round(match[1].length / spaceIndent) : 0;
+    }
+    // Try markdown list: "- " or "  - "
+    const mdMatch = line.match(/^(\s*)-\s/);
+    if (mdMatch) {
+      const leading = mdMatch[1].length;
+      return spaceIndent ? Math.round(leading / spaceIndent) : Math.round(leading / 2);
+    }
+    return 0;
+  }
+
+  function cleanText(line) {
+    return line.replace(/^\t+/, '').replace(/^\s*-\s/, '').replace(/^\s+/, '').trim();
+  }
+
+  e.preventDefault();
+  pushUndo();
+
+  // If only 1 line, just replace selected node text
+  if (lines.length === 1) {
+    const node = data.nodes[selectedNodeId];
+    if (node) {
+      node.text = cleanText(lines[0]);
+      renderMap(); selectNode(selectedNodeId);
+      toast('📋 已粘贴');
+    }
+    return;
+  }
+
+  // Multi-line: build tree structure
+  // Determine parent node: selected node or root
+  const parentId = selectedNodeId || data.rootId;
+  const baseDepth = getDepth(lines[0]);
+
+  // Stack tracks: [{id, depth}]
+  const stack = [{ id: parentId, depth: baseDepth - 1 }];
+
+  lines.forEach(line => {
+    const depth = getDepth(line);
+    const txt = cleanText(line);
+    if (!txt) return;
+
+    // Pop stack until we find a parent at depth-1
+    while (stack.length > 1 && stack[stack.length-1].depth >= depth) {
+      stack.pop();
+    }
+
+    const pid = stack[stack.length-1].id;
+    const newId = uid();
+    data.nodes[newId] = { id: newId, text: txt, children: [], parent: pid, collapsed: false };
+    data.nodes[pid].children.push(newId);
+    data.nodes[pid].collapsed = false;
+
+    stack.push({ id: newId, depth });
+  });
+
+  renderMap();
+  selectNode(parentId);
+  toast('📋 已粘贴 ' + lines.length + ' 个节点');
+});
+
 // ==================== Init ====================
 loadAllFiles();
 </script>
