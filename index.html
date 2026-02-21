@@ -3,654 +3,1115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧠 MindMap - 思维导图</title>
+<title>🧠 MindFlow — 思维导图</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0f0f13;
-    --surface: #1a1a24;
-    --border: #2a2a3a;
-    --text: #e0e0e8;
-    --text-dim: #8888a0;
-    --accent: #6c5ce7;
-    --accent2: #00cec9;
-    --accent3: #fd79a8;
-    --accent4: #fdcb6e;
-    --node-bg: #1e1e2e;
-    --node-active: #2a2a4a;
-    --line: #3a3a5a;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+:root {
+  --bg: #141417;
+  --bg-warm: #18181c;
+  --surface: #1e1e24;
+  --surface2: #24242c;
+  --border: #2c2c36;
+  --border-light: #36364a;
+  --text: #d4d4dc;
+  --text-soft: #9898a8;
+  --text-dim: #6a6a7a;
+  --accent: #7c6cf0;
+  --accent-soft: rgba(124,108,240,0.15);
+  --accent-glow: rgba(124,108,240,0.08);
+  --green: #4ade80;
+  --green-soft: rgba(74,222,128,0.12);
+  --amber: #f5b642;
+  --amber-soft: rgba(245,182,66,0.12);
+  --rose: #f472b6;
+  --rose-soft: rgba(244,114,182,0.12);
+  --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.12);
+  --sidebar-w: 260px;
+  --toolbar-h: 48px;
+  --status-h: 32px;
+  --radius: 10px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+::selection { background: var(--accent-soft); color: var(--accent); }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
-  /* Toolbar */
-  .toolbar {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 20px; background: var(--surface);
-    border-bottom: 1px solid var(--border); z-index: 100;
-    flex-shrink: 0;
-  }
-  .toolbar h1 { font-size: 18px; font-weight: 600; margin-right: 16px; }
-  .toolbar h1 span { color: var(--accent); }
-  .btn {
-    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
-    background: var(--node-bg); color: var(--text); cursor: pointer;
-    font-size: 13px; transition: all .15s;
-  }
-  .btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.danger:hover { background: #e74c3c; border-color: #e74c3c; }
-  .file-tabs {
-    display: flex; gap: 4px; margin-left: 8px; flex: 1; overflow-x: auto;
-  }
-  .file-tab {
-    padding: 5px 12px; border-radius: 6px 6px 0 0; background: var(--bg);
-    border: 1px solid var(--border); border-bottom: none; cursor: pointer;
-    font-size: 13px; color: var(--text-dim); white-space: nowrap;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .file-tab.active { background: var(--surface); color: var(--text); border-color: var(--accent); }
-  .file-tab .close-tab { opacity: 0.4; font-size: 11px; }
-  .file-tab .close-tab:hover { opacity: 1; color: #e74c3c; }
-  .shortcuts { font-size: 11px; color: var(--text-dim); margin-left: auto; }
-  .shortcuts kbd {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
-    padding: 1px 5px; font-family: monospace; font-size: 11px;
-  }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
 
-  /* Canvas */
-  .canvas-wrap { flex: 1; position: relative; overflow: hidden; }
-  #canvas {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    cursor: grab;
-  }
-  #canvas.dragging { cursor: grabbing; }
-  .map-container {
-    position: absolute; transform-origin: 0 0;
-  }
+/* ===== Toolbar ===== */
+.toolbar {
+  height: var(--toolbar-h);
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 100; flex-shrink: 0;
+}
+.logo {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.3px;
+  margin-right: 12px; display: flex; align-items: center; gap: 6px;
+  color: var(--text);
+}
+.logo span { color: var(--accent); }
+.btn {
+  padding: 5px 12px; border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-soft);
+  cursor: pointer; font-size: 12px; font-family: var(--font);
+  transition: var(--transition); display: flex; align-items: center; gap: 5px;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border-light); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); }
+.sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.spacer { flex: 1; }
+.kbd-hints {
+  display: flex; gap: 10px; font-size: 11px; color: var(--text-dim);
+}
+.kbd-hints span { display: flex; align-items: center; gap: 3px; }
+kbd {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+  padding: 0 4px; font-family: var(--mono); font-size: 10px; line-height: 18px;
+  color: var(--text-soft);
+}
 
-  /* Nodes */
-  .node {
-    position: absolute; display: flex; align-items: center;
-    min-width: 80px; cursor: pointer; user-select: none;
-  }
-  .node-content {
-    padding: 8px 16px; border-radius: 8px; font-size: 14px;
-    border: 2px solid transparent; transition: all .15s;
-    background: var(--node-bg); white-space: nowrap;
-    min-width: 60px; outline: none;
-  }
-  .node.depth-0 .node-content {
-    font-size: 18px; font-weight: 700; padding: 12px 24px;
-    background: linear-gradient(135deg, var(--accent), #8b5cf6);
-    color: #fff; border-radius: 12px;
-  }
-  .node.depth-1 .node-content { border-color: var(--accent2); font-weight: 500; }
-  .node.depth-2 .node-content { border-color: var(--accent3); }
-  .node.depth-3 .node-content { border-color: var(--accent4); }
-  .node.selected .node-content { box-shadow: 0 0 0 3px rgba(108,92,231,0.5); }
-  .node .node-content:focus { box-shadow: 0 0 0 3px rgba(108,92,231,0.8); }
-  .node.depth-0.selected .node-content { box-shadow: 0 0 0 3px rgba(255,255,255,0.3); }
+/* ===== Main Layout ===== */
+.main { display: flex; flex: 1; overflow: hidden; }
 
-  /* SVG lines */
-  svg.lines {
-    position: absolute; top: 0; left: 0; pointer-events: none;
-    width: 10000px; height: 10000px;
-  }
-  svg.lines path { fill: none; stroke: var(--line); stroke-width: 2; }
+/* ===== Sidebar ===== */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--bg-warm);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: var(--transition);
+  z-index: 50;
+}
+.sidebar.collapsed { width: 0; overflow: hidden; border-right: none; }
+.sidebar-header {
+  padding: 12px 14px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-header h3 {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-dim);
+}
+.sidebar-toggle {
+  width: 22px; height: 22px; border-radius: 4px;
+  border: none; background: transparent; color: var(--text-dim);
+  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+}
+.sidebar-toggle:hover { background: var(--surface); color: var(--text); }
+.sidebar-search {
+  margin: 0 10px 8px; padding: 6px 10px;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+  font-size: 12px; font-family: var(--font); outline: none;
+}
+.sidebar-search:focus { border-color: var(--accent); }
+.sidebar-search::placeholder { color: var(--text-dim); }
+.file-list { flex: 1; overflow-y: auto; padding: 0 6px 12px; }
+.file-item {
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  margin-bottom: 2px; transition: var(--transition);
+  border: 1px solid transparent;
+}
+.file-item:hover { background: var(--surface); }
+.file-item.active {
+  background: var(--accent-soft); border-color: rgba(124,108,240,0.2);
+}
+.file-item .file-name {
+  font-size: 13px; font-weight: 500; margin-bottom: 2px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.file-item .file-meta {
+  font-size: 10px; color: var(--text-dim);
+  display: flex; gap: 8px; align-items: center;
+}
+.file-item .file-meta .ver-badge {
+  background: var(--surface2); padding: 0 5px; border-radius: 3px;
+  font-family: var(--mono); font-size: 9px;
+}
+.file-item .file-actions {
+  opacity: 0; display: flex; gap: 2px; transition: var(--transition);
+}
+.file-item:hover .file-actions { opacity: 1; }
+.file-action-btn {
+  width: 20px; height: 20px; border: none; border-radius: 3px;
+  background: transparent; color: var(--text-dim); cursor: pointer;
+  font-size: 11px; display: flex; align-items: center; justify-content: center;
+}
+.file-action-btn:hover { background: var(--surface2); color: var(--text); }
+.file-action-btn.danger:hover { color: #ef4444; }
 
-  /* Toast */
-  .toast {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    padding: 10px 24px; background: var(--accent); color: #fff;
-    border-radius: 8px; font-size: 14px; z-index: 999;
-    opacity: 0; transition: opacity .3s; pointer-events: none;
-  }
-  .toast.show { opacity: 1; }
+/* Version Panel */
+.version-panel {
+  border-top: 1px solid var(--border);
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.version-panel.open { max-height: 240px; }
+.version-panel-inner { padding: 10px; overflow-y: auto; max-height: 230px; }
+.version-panel h4 {
+  font-size: 11px; font-weight: 500; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 8px; padding: 0 4px;
+}
+.version-item {
+  padding: 6px 8px; border-radius: 5px; cursor: pointer;
+  font-size: 11px; margin-bottom: 2px; transition: var(--transition);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.version-item:hover { background: var(--surface); }
+.version-item .ver-time { color: var(--text-soft); font-family: var(--mono); font-size: 10px; }
+.version-item .ver-label { color: var(--text-dim); font-size: 10px; }
+.version-item .ver-restore {
+  opacity: 0; font-size: 10px; color: var(--accent);
+  cursor: pointer; transition: var(--transition);
+}
+.version-item:hover .ver-restore { opacity: 1; }
 
-  /* Save Modal */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-    z-index: 200; align-items: center; justify-content: center;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px; min-width: 360px;
-  }
-  .modal h2 { margin-bottom: 16px; font-size: 16px; }
-  .modal input {
-    width: 100%; padding: 8px 12px; border-radius: 6px;
-    border: 1px solid var(--border); background: var(--bg);
-    color: var(--text); font-size: 14px; margin-bottom: 12px;
-  }
-  .modal textarea {
-    width: 100%; height: 200px; padding: 8px 12px; border-radius: 6px;
-    border: 1px solid var(--border); background: var(--bg);
-    color: var(--text); font-size: 12px; font-family: monospace;
-    margin-bottom: 12px; resize: vertical;
-  }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+/* ===== Canvas ===== */
+.canvas-area { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+.canvas-bg {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: 0.3;
+}
+#canvas { position: absolute; inset: 0; cursor: grab; z-index: 1; }
+#canvas.dragging { cursor: grabbing; }
+.map-container { position: absolute; transform-origin: 0 0; transition: none; }
+svg.lines { position: absolute; top:0; left:0; pointer-events: none; width: 12000px; height: 12000px; }
+svg.lines path { fill: none; stroke-width: 2; stroke-linecap: round; }
+
+/* ===== Nodes ===== */
+.node {
+  position: absolute; display: flex; align-items: center;
+  cursor: pointer; user-select: none;
+  transition: filter 0.15s ease;
+}
+.node:hover { filter: brightness(1.12); }
+.node-content {
+  padding: 7px 16px; border-radius: var(--radius);
+  font-size: 13px; font-family: var(--font); font-weight: 400;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap; min-width: 50px; outline: none;
+  transition: var(--transition);
+  color: var(--text);
+}
+.node.depth-0 .node-content {
+  font-size: 16px; font-weight: 600; padding: 10px 22px;
+  background: linear-gradient(135deg, #6c5ce7, #8b5cf6);
+  border: none; color: #fff; border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(108,92,231,0.25);
+  letter-spacing: -0.3px;
+}
+.node.depth-1 .node-content { border-color: var(--cyan); background: var(--cyan-soft); color: var(--cyan); font-weight: 500; }
+.node.depth-2 .node-content { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+.node.depth-3 .node-content { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); }
+.node.depth-4 .node-content { border-color: var(--rose); background: var(--rose-soft); color: var(--rose); }
+.node.selected .node-content {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--accent-glow);
+}
+.node.depth-0.selected .node-content {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 4px 24px rgba(108,92,231,0.35);
+}
+.node .node-content:focus {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 20px rgba(124,108,240,0.15);
+}
+.collapse-indicator {
+  position: absolute; right: -18px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; color: var(--text-dim); cursor: pointer;
+  transition: var(--transition);
+}
+.collapse-indicator:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.node-count {
+  position: absolute; right: -20px; top: 50%; transform: translateY(-50%);
+  font-size: 9px; color: var(--text-dim); font-family: var(--mono);
+  background: var(--surface2); padding: 1px 5px; border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* ===== Status Bar ===== */
+.status-bar {
+  height: var(--status-h);
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-dim);
+  z-index: 100; flex-shrink: 0;
+}
+.status-bar .status-item { display: flex; align-items: center; gap: 4px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.status-dot.saved { background: var(--green); }
+.status-dot.unsaved { background: var(--amber); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%) translateY(20px);
+  padding: 8px 20px; background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px;
+  font-size: 13px; z-index: 999;
+  opacity: 0; transition: all 0.3s ease; pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  z-index: 200; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px; min-width: 380px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.modal h2 { margin-bottom: 16px; font-size: 15px; font-weight: 600; }
+.modal input, .modal textarea {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); font-size: 13px; font-family: var(--font);
+  margin-bottom: 12px; outline: none;
+  transition: var(--transition);
+}
+.modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+.modal textarea { height: 180px; font-family: var(--mono); font-size: 12px; resize: vertical; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ===== Context Menu ===== */
+.context-menu {
+  position: fixed; z-index: 300;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px; min-width: 160px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  display: none;
+}
+.context-menu.show { display: block; }
+.context-menu-item {
+  padding: 6px 12px; border-radius: 5px; cursor: pointer;
+  font-size: 12px; display: flex; align-items: center; gap: 8px;
+  color: var(--text-soft); transition: var(--transition);
+}
+.context-menu-item:hover { background: var(--accent-soft); color: var(--text); }
+.context-menu-item.danger:hover { background: var(--rose-soft); color: var(--rose); }
+.context-menu-sep { height: 1px; background: var(--border); margin: 3px 8px; }
+
+/* ===== Zoom Controls ===== */
+.zoom-controls {
+  position: absolute; bottom: 12px; right: 12px; z-index: 10;
+  display: flex; gap: 2px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 2px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.zoom-btn {
+  width: 30px; height: 28px; border: none; border-radius: 6px;
+  background: transparent; color: var(--text-soft); cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.zoom-btn:hover { background: var(--surface2); color: var(--text); }
+.zoom-level {
+  padding: 0 8px; font-size: 11px; color: var(--text-dim);
+  font-family: var(--mono); display: flex; align-items: center;
+}
+
+/* ===== Minimap ===== */
+.minimap {
+  position: absolute; bottom: 52px; right: 12px; z-index: 10;
+  width: 140px; height: 90px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.minimap:hover { opacity: 1; }
+.minimap canvas { width: 100%; height: 100%; }
 </style>
 </head>
 <body>
 
+<!-- Toolbar -->
 <div class="toolbar">
-  <h1>🧠 <span>MindMap</span></h1>
-  <button class="btn" onclick="newFile()">📄 新建</button>
-  <button class="btn" onclick="showSaveModal()">💾 保存</button>
-  <button class="btn" onclick="showLoadModal()">📂 加载</button>
-  <button class="btn" onclick="exportJSON()">📤 导出JSON</button>
-  <button class="btn" onclick="exportMarkdown()">📝 导出MD</button>
-  <div class="file-tabs" id="fileTabs"></div>
-  <div class="shortcuts">
-    <kbd>Enter</kbd> 子节点 &nbsp;
-    <kbd>Tab</kbd> 兄弟节点 &nbsp;
-    <kbd>Del</kbd> 删除 &nbsp;
-    <kbd>F2</kbd> 编辑 &nbsp;
-    <kbd>Space</kbd> 折叠
+  <div class="logo">🧠 <span>MindFlow</span></div>
+  <button class="btn" onclick="newFile()">+ 新建</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="saveCurrentFile()">💾 保存</button>
+  <button class="btn" onclick="exportJSON()">↗ JSON</button>
+  <button class="btn" onclick="exportMarkdown()">↗ MD</button>
+  <button class="btn" onclick="syncToMCP()" title="同步到 MCP 记忆">🔄 MCP同步</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="undo()" title="撤销">↩</button>
+  <button class="btn" onclick="redo()" title="重做">↪</button>
+  <div class="spacer"></div>
+  <div class="kbd-hints">
+    <span><kbd>Enter</kbd> 兄弟</span>
+    <span><kbd>Tab</kbd> 子级</span>
+    <span><kbd>Del</kbd> 删除</span>
+    <span><kbd>F2</kbd> 编辑</span>
+    <span><kbd>Space</kbd> 折叠</span>
   </div>
 </div>
 
-<div class="canvas-wrap">
-  <div id="canvas">
-    <div class="map-container" id="mapContainer">
-      <svg class="lines" id="svgLines"></svg>
+<!-- Main -->
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3>📂 文件</h3>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="收起">◀</button>
+    </div>
+    <input class="sidebar-search" placeholder="搜索导图..." oninput="filterFiles(this.value)" />
+    <div class="file-list" id="fileList"></div>
+    <div class="version-panel" id="versionPanel">
+      <div class="version-panel-inner" id="versionList"></div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-area">
+    <div class="canvas-bg"></div>
+    <div id="canvas">
+      <div class="map-container" id="mapContainer">
+        <svg class="lines" id="svgLines"></svg>
+      </div>
+    </div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomIn()">+</button>
+      <span class="zoom-level" id="zoomLevel">100%</span>
+      <button class="zoom-btn" onclick="zoomOut()">−</button>
+      <button class="zoom-btn" onclick="zoomFit()" title="适应画布">◎</button>
     </div>
   </div>
 </div>
 
+<!-- Status Bar -->
+<div class="status-bar">
+  <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggleBtn" style="display:none" title="展开侧栏">▶</button>
+  <div class="status-item"><span class="status-dot saved" id="statusDot"></span><span id="statusSave">已保存</span></div>
+  <div class="status-item" id="statusNodes">0 个节点</div>
+  <div class="status-item" id="statusDepth">0 层</div>
+  <div class="spacer"></div>
+  <div class="status-item" id="statusFile">未命名导图</div>
+</div>
+
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Save Modal -->
-<div class="modal-overlay" id="saveModal">
+<!-- Rename Modal -->
+<div class="modal-overlay" id="renameModal">
   <div class="modal">
-    <h2>💾 保存思维导图</h2>
-    <input id="saveName" placeholder="文件名（如：项目规划）" />
+    <h2>重命名</h2>
+    <input id="renameInput" placeholder="输入新名称" />
     <div class="modal-actions">
-      <button class="btn" onclick="closeSaveModal()">取消</button>
-      <button class="btn" onclick="doSave()" style="background:var(--accent);border-color:var(--accent);color:#fff">保存</button>
+      <button class="btn" onclick="closeRenameModal()">取消</button>
+      <button class="btn primary" onclick="doRename()">确定</button>
     </div>
   </div>
 </div>
 
-<!-- Load Modal -->
-<div class="modal-overlay" id="loadModal">
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
   <div class="modal">
-    <h2>📂 加载思维导图</h2>
-    <div id="savedList" style="max-height:300px;overflow-y:auto;margin-bottom:12px"></div>
-    <h3 style="font-size:14px;margin-bottom:8px">或粘贴JSON：</h3>
-    <textarea id="loadJSON" placeholder='粘贴导出的JSON...'></textarea>
+    <h2>导入 JSON</h2>
+    <textarea id="importJSON" placeholder="粘贴导出的 JSON 数据..."></textarea>
     <div class="modal-actions">
-      <button class="btn" onclick="closeLoadModal()">取消</button>
-      <button class="btn" onclick="doLoadJSON()" style="background:var(--accent);border-color:var(--accent);color:#fff">加载</button>
+      <button class="btn" onclick="closeImportModal()">取消</button>
+      <button class="btn primary" onclick="doImport()">导入</button>
     </div>
   </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="ctxMenu">
+  <div class="context-menu-item" onclick="ctxAction('rename')">✏️ 重命名</div>
+  <div class="context-menu-item" onclick="ctxAction('duplicate')">📋 复制</div>
+  <div class="context-menu-item" onclick="ctxAction('export')">↗ 导出 JSON</div>
+  <div class="context-menu-sep"></div>
+  <div class="context-menu-item" onclick="ctxAction('versions')">🕑 版本历史</div>
+  <div class="context-menu-sep"></div>
+  <div class="context-menu-item danger" onclick="ctxAction('delete')">🗑 删除</div>
 </div>
 
 <script>
-// ========== Data Model ==========
-let files = []; // {id, name, data: {nodes, nextId}}
+// ==================== State ====================
+let files = {}; // id -> { name, data, versions: [{ts, data, label}], updatedAt }
 let activeFileId = null;
 let selectedNodeId = null;
 let panX = 0, panY = 0, scale = 1;
+let undoStack = [], redoStack = [];
+let isDirty = false;
+let ctxTargetFileId = null;
+let searchFilter = '';
 
-const LEVEL_COLORS = ['#6c5ce7','#00cec9','#fd79a8','#fdcb6e','#a29bfe','#55efc4','#fab1a0','#ffeaa7'];
-const H_GAP = 180, V_GAP = 8, NODE_H = 40;
+const COLORS = ['#7c6cf0','#22d3ee','#4ade80','#f5b642','#f472b6','#a78bfa','#34d399','#fb923c'];
+const H_GAP = 200, V_GAP = 10, NODE_H = 38;
 
-function uid() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-function createDefaultData(title = '中心主题') {
-  const rootId = uid();
-  return {
-    nodes: { [rootId]: { id: rootId, text: title, children: [], parent: null, collapsed: false } },
-    rootId,
-    nextId: 1
-  };
-}
-
-// ========== File Management ==========
+// ==================== File Management ====================
 function newFile(name) {
-  name = name || '未命名导图 ' + (files.length + 1);
+  name = name || '未命名导图';
   const id = uid();
-  const data = createDefaultData(name);
-  files.push({ id, name, data });
-  activeFileId = id;
-  renderTabs();
-  renderMap();
-  selectNode(data.rootId);
+  const rootId = uid();
+  const data = {
+    nodes: { [rootId]: { id: rootId, text: name, children: [], parent: null, collapsed: false } },
+    rootId
+  };
+  files[id] = { name, data, versions: [], updatedAt: Date.now(), createdAt: Date.now() };
+  switchToFile(id);
+  selectNode(rootId);
+  autoSaveAll();
 }
 
-function switchFile(id) {
+function switchToFile(id) {
+  if (!files[id]) return;
   activeFileId = id;
   selectedNodeId = null;
-  renderTabs();
+  undoStack = []; redoStack = [];
+  panX = 100; panY = 0; scale = 1;
+  isDirty = false;
+  renderSidebar();
   renderMap();
-  const f = getFile();
+  updateStatus();
+  const f = files[id];
   if (f) selectNode(f.data.rootId);
 }
 
-function closeFile(id) {
-  files = files.filter(f => f.id !== id);
+function deleteFile(id) {
+  if (!files[id]) return;
+  delete files[id];
   if (activeFileId === id) {
-    activeFileId = files.length ? files[0].id : null;
+    const ids = Object.keys(files);
+    if (ids.length) switchToFile(ids[0]);
+    else { activeFileId = null; newFile(); }
   }
-  if (!files.length) newFile();
-  renderTabs();
+  autoSaveAll();
+  renderSidebar();
+}
+
+function duplicateFile(id) {
+  const src = files[id];
+  if (!src) return;
+  const newId = uid();
+  files[newId] = {
+    name: src.name + ' (副本)',
+    data: JSON.parse(JSON.stringify(src.data)),
+    versions: [],
+    updatedAt: Date.now(),
+    createdAt: Date.now()
+  };
+  switchToFile(newId);
+  autoSaveAll();
+  toast('📋 已复制');
+}
+
+function renameFile(id, newName) {
+  if (!files[id] || !newName.trim()) return;
+  files[id].name = newName.trim();
+  files[id].updatedAt = Date.now();
+  autoSaveAll();
+  renderSidebar();
+  updateStatus();
+}
+
+// ==================== Versions ====================
+function saveVersion(id, label) {
+  const f = files[id];
+  if (!f) return;
+  label = label || '';
+  f.versions.push({
+    ts: Date.now(),
+    data: JSON.parse(JSON.stringify(f.data)),
+    label
+  });
+  // Keep max 50 versions
+  if (f.versions.length > 50) f.versions.shift();
+  f.updatedAt = Date.now();
+}
+
+function restoreVersion(fileId, versionIdx) {
+  const f = files[fileId];
+  if (!f || !f.versions[versionIdx]) return;
+  // Save current as version first
+  saveVersion(fileId, '自动备份');
+  f.data = JSON.parse(JSON.stringify(f.versions[versionIdx].data));
+  f.updatedAt = Date.now();
+  autoSaveAll();
+  if (activeFileId === fileId) {
+    renderMap();
+    selectNode(f.data.rootId);
+  }
+  toast('⏪ 已恢复版本');
+  renderSidebar();
+  showVersions(fileId);
+}
+
+// ==================== Save / Load ====================
+function saveCurrentFile() {
+  if (!activeFileId || !files[activeFileId]) return;
+  saveVersion(activeFileId, '手动保存');
+  isDirty = false;
+  autoSaveAll();
+  updateStatus();
+  toast('✅ 已保存（v' + files[activeFileId].versions.length + '）');
+  renderSidebar();
+}
+
+function autoSaveAll() {
+  localStorage.setItem('mindflow_files', JSON.stringify(files));
+  localStorage.setItem('mindflow_active', activeFileId || '');
+}
+
+function loadAllFiles() {
+  try {
+    const raw = localStorage.getItem('mindflow_files');
+    if (raw) {
+      files = JSON.parse(raw);
+      const active = localStorage.getItem('mindflow_active');
+      if (active && files[active]) {
+        switchToFile(active);
+        return;
+      }
+      const ids = Object.keys(files);
+      if (ids.length) { switchToFile(ids[0]); return; }
+    }
+  } catch(e) {}
+  newFile('我的思维导图');
+}
+
+// ==================== MCP Sync ====================
+function syncToMCP() {
+  if (!activeFileId || !files[activeFileId]) return;
+  const f = files[activeFileId];
+  const exportData = {
+    name: f.name,
+    data: f.data,
+    exportedAt: new Date().toISOString(),
+    nodeCount: Object.keys(f.data.nodes).length
+  };
+  const json = JSON.stringify(exportData, null, 2);
+  // Copy to clipboard
+  navigator.clipboard.writeText(json).then(() => {
+    toast('📋 已复制 JSON — 发送给 QiQi 即可同步到 MCP 记忆');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = json; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('📋 已复制 JSON — 发送给 QiQi 即可同步到 MCP 记忆');
+  });
+  // Also try postMessage
+  try { window.parent.postMessage({ type: 'mindmap-save', name: f.name, data: f.data }, '*'); } catch(e) {}
+}
+
+function syncAllToMCP() {
+  const allData = {};
+  Object.entries(files).forEach(([id, f]) => {
+    allData[f.name] = { data: f.data, updatedAt: f.updatedAt };
+  });
+  const json = JSON.stringify(allData, null, 2);
+  navigator.clipboard.writeText(json).then(() => {
+    toast('📋 所有导图已复制 — 发送给 QiQi 即可全部同步');
+  });
+}
+
+// ==================== Undo/Redo ====================
+function pushUndo() {
+  const data = getData();
+  if (!data) return;
+  undoStack.push(JSON.stringify(data));
+  if (undoStack.length > 40) undoStack.shift();
+  redoStack = [];
+  isDirty = true;
+  updateStatus();
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  const data = getData();
+  if (data) redoStack.push(JSON.stringify(data));
+  const prev = JSON.parse(undoStack.pop());
+  files[activeFileId].data = prev;
   renderMap();
+  updateStatus();
 }
 
-function getFile() { return files.find(f => f.id === activeFileId); }
-function getData() { const f = getFile(); return f ? f.data : null; }
-
-function renderTabs() {
-  const el = document.getElementById('fileTabs');
-  el.innerHTML = files.map(f => `
-    <div class="file-tab ${f.id === activeFileId ? 'active' : ''}" onclick="switchFile('${f.id}')">
-      ${esc(f.name)}
-      <span class="close-tab" onclick="event.stopPropagation();closeFile('${f.id}')">✕</span>
-    </div>
-  `).join('');
+function redo() {
+  if (!redoStack.length) return;
+  const data = getData();
+  if (data) undoStack.push(JSON.stringify(data));
+  const next = JSON.parse(redoStack.pop());
+  files[activeFileId].data = next;
+  renderMap();
+  updateStatus();
 }
 
-// ========== Layout Engine ==========
+// ==================== Data Helpers ====================
+function getData() {
+  if (!activeFileId || !files[activeFileId]) return null;
+  return files[activeFileId].data;
+}
+
+// ==================== Layout ====================
 function layoutTree(data) {
-  const positions = {};
-  if (!data || !data.rootId) return positions;
-
-  function getHeight(nodeId) {
-    const node = data.nodes[nodeId];
-    if (!node) return NODE_H;
-    if (node.collapsed || !node.children.length) return NODE_H;
-    let total = 0;
-    node.children.forEach((cid, i) => {
-      total += getHeight(cid);
-      if (i < node.children.length - 1) total += V_GAP;
-    });
-    return Math.max(NODE_H, total);
+  const pos = {};
+  if (!data || !data.rootId) return pos;
+  function getH(nid) {
+    const n = data.nodes[nid];
+    if (!n) return NODE_H;
+    if (n.collapsed || !n.children.length) return NODE_H;
+    let t = 0;
+    n.children.forEach((c,i) => { t += getH(c); if (i < n.children.length-1) t += V_GAP; });
+    return Math.max(NODE_H, t);
   }
-
-  function layout(nodeId, x, y, depth) {
-    const node = data.nodes[nodeId];
-    if (!node) return;
-    positions[nodeId] = { x, y, depth };
-    if (node.collapsed || !node.children.length) return;
-    const totalH = getHeight(nodeId);
-    let cy = y - totalH / 2;
-    node.children.forEach((cid, i) => {
-      const ch = getHeight(cid);
-      layout(cid, x + H_GAP, cy + ch / 2, depth + 1);
+  function lay(nid, x, y, d) {
+    const n = data.nodes[nid];
+    if (!n) return;
+    pos[nid] = { x, y, depth: d };
+    if (n.collapsed || !n.children.length) return;
+    const th = getH(nid);
+    let cy = y - th/2;
+    n.children.forEach(cid => {
+      const ch = getH(cid);
+      lay(cid, x + H_GAP, cy + ch/2, d+1);
       cy += ch + V_GAP;
     });
   }
-
-  layout(data.rootId, 200, 400, 0);
-  return positions;
+  lay(data.rootId, 300, 500, 0);
+  return pos;
 }
 
-// ========== Rendering ==========
+// ==================== Render ====================
 function renderMap() {
   const data = getData();
   const container = document.getElementById('mapContainer');
   const svg = document.getElementById('svgLines');
-
-  // Clear old nodes (keep svg)
   container.querySelectorAll('.node').forEach(n => n.remove());
   svg.innerHTML = '';
-
   if (!data) return;
-  const positions = layoutTree(data);
+  const pos = layoutTree(data);
 
-  // Draw lines
+  // Lines
   Object.entries(data.nodes).forEach(([id, node]) => {
     if (!node.children.length || node.collapsed) return;
-    const p = positions[id];
-    if (!p) return;
-    const px = p.x + 100; // approx right edge
-    const py = p.y;
+    const p = pos[id]; if (!p) return;
+    const px = p.x + 110;
     node.children.forEach(cid => {
-      const c = positions[cid];
-      if (!c) return;
-      const cx = c.x;
-      const cy = c.y;
-      const mx = (px + cx) / 2;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const color = LEVEL_COLORS[Math.min(c.depth, LEVEL_COLORS.length - 1)];
-      path.setAttribute('d', `M${px},${py} C${mx},${py} ${mx},${cy} ${cx},${cy}`);
+      const c = pos[cid]; if (!c) return;
+      const color = COLORS[Math.min(c.depth, COLORS.length-1)];
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const mx = (px + c.x) / 2;
+      path.setAttribute('d', `M${px},${p.y} C${mx},${p.y} ${mx},${c.y} ${c.x},${c.y}`);
       path.setAttribute('stroke', color);
-      path.setAttribute('stroke-opacity', '0.5');
+      path.setAttribute('stroke-opacity', '0.4');
       svg.appendChild(path);
     });
   });
 
-  // Draw nodes
-  Object.entries(positions).forEach(([id, pos]) => {
-    const node = data.nodes[id];
-    if (!node) return;
+  // Nodes
+  Object.entries(pos).forEach(([id, p]) => {
+    const node = data.nodes[id]; if (!node) return;
     const div = document.createElement('div');
-    div.className = `node depth-${Math.min(pos.depth, 3)} ${id === selectedNodeId ? 'selected' : ''}`;
-    div.style.left = pos.x + 'px';
-    div.style.top = (pos.y - NODE_H / 2) + 'px';
+    div.className = `node depth-${Math.min(p.depth,4)} ${id===selectedNodeId?'selected':''}`;
+    div.style.left = p.x + 'px';
+    div.style.top = (p.y - NODE_H/2) + 'px';
     div.dataset.id = id;
-    const hasKids = node.children.length > 0;
-    const collapseIcon = hasKids ? (node.collapsed ? ' ▶' : '') : '';
-    div.innerHTML = `<div class="node-content" tabindex="-1">${esc(node.text)}${collapseIcon}</div>`;
-    div.addEventListener('click', (e) => { e.stopPropagation(); selectNode(id); });
-    div.addEventListener('dblclick', (e) => { e.stopPropagation(); editNode(id); });
+
+    let extra = '';
+    if (node.collapsed && node.children.length) {
+      extra = `<span class="node-count">${countDescendants(id)}</span>`;
+    } else if (node.children.length) {
+      // No indicator when expanded
+    }
+
+    div.innerHTML = `<div class="node-content" tabindex="-1">${esc(node.text)}</div>${extra}`;
+    div.addEventListener('click', e => { e.stopPropagation(); selectNode(id); });
+    div.addEventListener('dblclick', e => { e.stopPropagation(); editNode(id); });
     container.appendChild(div);
   });
-
   applyTransform();
+  autoSaveAll();
+}
+
+function countDescendants(id) {
+  const data = getData();
+  const n = data.nodes[id];
+  if (!n) return 0;
+  let c = n.children.length;
+  n.children.forEach(cid => c += countDescendants(cid));
+  return c;
 }
 
 function applyTransform() {
-  const c = document.getElementById('mapContainer');
-  c.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
+  document.getElementById('mapContainer').style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
+  document.getElementById('zoomLevel').textContent = Math.round(scale*100)+'%';
 }
 
 function selectNode(id) {
   selectedNodeId = id;
-  document.querySelectorAll('.node').forEach(n => {
-    n.classList.toggle('selected', n.dataset.id === id);
-  });
+  document.querySelectorAll('.node').forEach(n => n.classList.toggle('selected', n.dataset.id === id));
 }
 
 function editNode(id) {
-  const data = getData();
-  if (!data || !data.nodes[id]) return;
+  const data = getData(); if (!data || !data.nodes[id]) return;
   const node = data.nodes[id];
-  const domNode = document.querySelector(`.node[data-id="${id}"] .node-content`);
-  if (!domNode) return;
-  domNode.textContent = node.text;
-  domNode.contentEditable = true;
-  domNode.focus();
-  // Select all text
-  const range = document.createRange();
-  range.selectNodeContents(domNode);
+  const dom = document.querySelector(`.node[data-id="${id}"] .node-content`);
+  if (!dom) return;
+  pushUndo();
+  dom.textContent = node.text;
+  dom.contentEditable = true;
+  dom.focus();
+  const r = document.createRange();
+  r.selectNodeContents(dom);
   window.getSelection().removeAllRanges();
-  window.getSelection().addRange(range);
-
+  window.getSelection().addRange(r);
   const finish = () => {
-    domNode.contentEditable = false;
-    const newText = domNode.textContent.trim() || node.text;
-    node.text = newText;
-    renderMap();
-    selectNode(id);
+    dom.contentEditable = false;
+    node.text = dom.textContent.trim() || node.text;
+    renderMap(); selectNode(id);
   };
-  domNode.addEventListener('blur', finish, { once: true });
-  domNode.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); domNode.blur(); }
-    if (e.key === 'Escape') { domNode.textContent = node.text; domNode.blur(); }
+  dom.addEventListener('blur', finish, { once: true });
+  dom.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.blur(); }
+    if (e.key === 'Escape') { dom.textContent = node.text; dom.blur(); }
+    if (e.key === 'Tab') { e.preventDefault(); dom.blur(); }
   });
 }
 
-// ========== Node Operations ==========
-function addChild(parentId) {
-  const data = getData();
-  if (!data || !data.nodes[parentId]) return;
-  const newId = uid();
-  data.nodes[newId] = { id: newId, text: '新节点', children: [], parent: parentId, collapsed: false };
-  data.nodes[parentId].children.push(newId);
-  data.nodes[parentId].collapsed = false;
-  renderMap();
-  selectNode(newId);
-  setTimeout(() => editNode(newId), 50);
-}
-
+// ==================== Node Ops ====================
 function addSibling(nodeId) {
-  const data = getData();
-  if (!data) return;
+  const data = getData(); if (!data) return;
   const node = data.nodes[nodeId];
-  if (!node || !node.parent) return; // Can't add sibling to root
+  if (!node || !node.parent) {
+    // Root node: add child instead
+    addChild(nodeId); return;
+  }
+  pushUndo();
   const parent = data.nodes[node.parent];
   const idx = parent.children.indexOf(nodeId);
   const newId = uid();
-  data.nodes[newId] = { id: newId, text: '新节点', children: [], parent: node.parent, collapsed: false };
-  parent.children.splice(idx + 1, 0, newId);
-  renderMap();
-  selectNode(newId);
+  data.nodes[newId] = { id: newId, text: '', children: [], parent: node.parent, collapsed: false };
+  parent.children.splice(idx+1, 0, newId);
+  renderMap(); selectNode(newId);
+  setTimeout(() => editNode(newId), 50);
+}
+
+function addChild(nodeId) {
+  const data = getData(); if (!data || !data.nodes[nodeId]) return;
+  pushUndo();
+  const newId = uid();
+  data.nodes[newId] = { id: newId, text: '', children: [], parent: nodeId, collapsed: false };
+  data.nodes[nodeId].children.push(newId);
+  data.nodes[nodeId].collapsed = false;
+  renderMap(); selectNode(newId);
   setTimeout(() => editNode(newId), 50);
 }
 
 function deleteNode(nodeId) {
-  const data = getData();
-  if (!data) return;
+  const data = getData(); if (!data) return;
   const node = data.nodes[nodeId];
-  if (!node || !node.parent) return; // Can't delete root
-
-  function removeTree(id) {
+  if (!node || !node.parent) return;
+  pushUndo();
+  function rmTree(id) {
     const n = data.nodes[id];
-    if (n) { n.children.forEach(c => removeTree(c)); delete data.nodes[id]; }
+    if (n) { n.children.forEach(c => rmTree(c)); delete data.nodes[id]; }
   }
-
   const parent = data.nodes[node.parent];
   const idx = parent.children.indexOf(nodeId);
-  parent.children.splice(idx, 1);
-  removeTree(nodeId);
-  renderMap();
-  selectNode(node.parent);
+  parent.children.splice(idx,1);
+  // Select next sibling or parent
+  const nextSelect = parent.children[Math.min(idx, parent.children.length-1)] || node.parent;
+  rmTree(nodeId);
+  renderMap(); selectNode(nextSelect);
 }
 
 function toggleCollapse(nodeId) {
-  const data = getData();
-  if (!data || !data.nodes[nodeId]) return;
+  const data = getData(); if (!data || !data.nodes[nodeId]) return;
+  pushUndo();
   data.nodes[nodeId].collapsed = !data.nodes[nodeId].collapsed;
-  renderMap();
-  selectNode(nodeId);
+  renderMap(); selectNode(nodeId);
 }
 
-// ========== Keyboard ==========
-document.addEventListener('keydown', (e) => {
-  // Ignore when editing
-  if (document.activeElement?.contentEditable === 'true' || document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
-
-  const data = getData();
-  if (!data || !selectedNodeId) return;
-
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    addChild(selectedNodeId);
-  } else if (e.key === 'Tab') {
-    e.preventDefault();
-    addSibling(selectedNodeId);
-  } else if (e.key === 'Delete' || e.key === 'Backspace') {
-    e.preventDefault();
-    deleteNode(selectedNodeId);
-  } else if (e.key === 'F2') {
-    e.preventDefault();
-    editNode(selectedNodeId);
-  } else if (e.key === ' ') {
-    e.preventDefault();
-    toggleCollapse(selectedNodeId);
-  } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-    e.preventDefault();
-    navigateNode(e.key);
+// ==================== Keyboard ====================
+document.addEventListener('keydown', e => {
+  if (document.activeElement?.contentEditable === 'true' ||
+      document.activeElement?.tagName === 'INPUT' ||
+      document.activeElement?.tagName === 'TEXTAREA') return;
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') { e.preventDefault(); if(e.shiftKey) redo(); else undo(); return; }
+    if (e.key === 's') { e.preventDefault(); saveCurrentFile(); return; }
   }
+  const data = getData(); if (!data || !selectedNodeId) return;
+  if (e.key === 'Enter') { e.preventDefault(); addSibling(selectedNodeId); }
+  else if (e.key === 'Tab') { e.preventDefault(); addChild(selectedNodeId); }
+  else if (e.key === 'Delete' || (e.key === 'Backspace' && !e.ctrlKey)) { e.preventDefault(); deleteNode(selectedNodeId); }
+  else if (e.key === 'F2') { e.preventDefault(); editNode(selectedNodeId); }
+  else if (e.key === ' ') { e.preventDefault(); toggleCollapse(selectedNodeId); }
+  else if (e.key.startsWith('Arrow')) { e.preventDefault(); navigateNode(e.key); }
 });
 
 function navigateNode(key) {
   const data = getData();
-  const node = data.nodes[selectedNodeId];
-  if (!node) return;
-  if (key === 'ArrowLeft' && node.parent) {
-    selectNode(node.parent);
-  } else if (key === 'ArrowRight' && node.children.length && !node.collapsed) {
-    selectNode(node.children[0]);
-  } else if ((key === 'ArrowUp' || key === 'ArrowDown') && node.parent) {
-    const siblings = data.nodes[node.parent].children;
-    const idx = siblings.indexOf(node.id);
-    const next = key === 'ArrowUp' ? idx - 1 : idx + 1;
-    if (next >= 0 && next < siblings.length) selectNode(siblings[next]);
+  const node = data.nodes[selectedNodeId]; if (!node) return;
+  if (key === 'ArrowLeft' && node.parent) selectNode(node.parent);
+  else if (key === 'ArrowRight' && node.children.length && !node.collapsed) selectNode(node.children[0]);
+  else if ((key==='ArrowUp'||key==='ArrowDown') && node.parent) {
+    const sibs = data.nodes[node.parent].children;
+    const idx = sibs.indexOf(node.id);
+    const next = key==='ArrowUp' ? idx-1 : idx+1;
+    if (next>=0 && next<sibs.length) selectNode(sibs[next]);
   }
 }
 
-// ========== Pan & Zoom ==========
+// ==================== Pan & Zoom ====================
 const canvas = document.getElementById('canvas');
 let isPanning = false, startX, startY;
-
-canvas.addEventListener('mousedown', (e) => {
-  if (e.target === canvas || e.target.id === 'mapContainer' || e.target.tagName === 'svg' || e.target.tagName === 'path') {
-    isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY;
+canvas.addEventListener('mousedown', e => {
+  if (e.target===canvas || e.target.closest('.canvas-bg') || e.target.id==='mapContainer' || e.target.tagName==='svg' || e.target.tagName==='path') {
+    isPanning = true; startX = e.clientX-panX; startY = e.clientY-panY;
     canvas.classList.add('dragging');
   }
 });
-window.addEventListener('mousemove', (e) => {
+window.addEventListener('mousemove', e => {
   if (!isPanning) return;
-  panX = e.clientX - startX; panY = e.clientY - startY;
+  panX = e.clientX-startX; panY = e.clientY-startY;
   applyTransform();
 });
-window.addEventListener('mouseup', () => { isPanning = false; canvas.classList.remove('dragging'); });
-canvas.addEventListener('wheel', (e) => {
+window.addEventListener('mouseup', () => { isPanning=false; canvas.classList.remove('dragging'); });
+canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  const delta = e.deltaY > 0 ? 0.9 : 1.1;
-  scale = Math.max(0.2, Math.min(3, scale * delta));
+  const d = e.deltaY > 0 ? 0.92 : 1.08;
+  scale = Math.max(0.15, Math.min(3, scale*d));
   applyTransform();
 }, { passive: false });
 
-// ========== Save/Load ==========
-function showSaveModal() {
-  const f = getFile();
-  if (f) document.getElementById('saveName').value = f.name;
-  document.getElementById('saveModal').classList.add('show');
-  document.getElementById('saveName').focus();
-}
-function closeSaveModal() { document.getElementById('saveModal').classList.remove('show'); }
+function zoomIn() { scale = Math.min(3, scale*1.2); applyTransform(); }
+function zoomOut() { scale = Math.max(0.15, scale/1.2); applyTransform(); }
+function zoomFit() { scale = 1; panX = 100; panY = 0; applyTransform(); }
 
-function doSave() {
-  const f = getFile();
-  if (!f) return;
-  const name = document.getElementById('saveName').value.trim() || f.name;
-  f.name = name;
+// ==================== Sidebar ====================
+function renderSidebar() {
+  const list = document.getElementById('fileList');
+  const sorted = Object.entries(files)
+    .filter(([_,f]) => !searchFilter || f.name.toLowerCase().includes(searchFilter))
+    .sort((a,b) => b[1].updatedAt - a[1].updatedAt);
 
-  // Save to localStorage
-  const saved = JSON.parse(localStorage.getItem('mindmaps') || '{}');
-  saved[name] = { data: f.data, savedAt: new Date().toISOString() };
-  localStorage.setItem('mindmaps', JSON.stringify(saved));
-
-  closeSaveModal();
-  renderTabs();
-  toast('✅ 已保存: ' + name);
-
-  // Also post to parent if in iframe (for MCP save)
-  try { window.parent.postMessage({ type: 'mindmap-save', name, data: f.data }, '*'); } catch(e) {}
-}
-
-function showLoadModal() {
-  const saved = JSON.parse(localStorage.getItem('mindmaps') || '{}');
-  const list = document.getElementById('savedList');
-  const names = Object.keys(saved);
-  if (!names.length) {
-    list.innerHTML = '<div style="color:var(--text-dim);padding:8px">暂无保存的导图</div>';
-  } else {
-    list.innerHTML = names.map(n => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border)">
-        <span style="cursor:pointer" onclick="doLoad('${esc(n)}')">${esc(n)}</span>
-        <div style="display:flex;gap:6px">
-          <button class="btn" onclick="doLoad('${esc(n)}')" style="padding:3px 10px;font-size:12px">打开</button>
-          <button class="btn danger" onclick="doDelete('${esc(n)}')" style="padding:3px 10px;font-size:12px">删除</button>
+  list.innerHTML = sorted.map(([id, f]) => {
+    const nc = Object.keys(f.data.nodes).length;
+    const time = timeAgo(f.updatedAt);
+    const verCount = f.versions.length;
+    return `
+      <div class="file-item ${id===activeFileId?'active':''}" onclick="switchToFile('${id}')" oncontextmenu="showCtxMenu(event,'${id}')">
+        <div class="file-name">
+          <span>${esc(f.name)}</span>
+          <div class="file-actions">
+            <button class="file-action-btn" onclick="event.stopPropagation();showCtxMenu(event,'${id}')" title="更多">⋯</button>
+          </div>
+        </div>
+        <div class="file-meta">
+          <span>${nc} 节点</span>
+          <span>${time}</span>
+          ${verCount ? `<span class="ver-badge">v${verCount}</span>` : ''}
         </div>
       </div>
-    `).join('');
+    `;
+  }).join('') || '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">无匹配文件</div>';
+}
+
+function filterFiles(val) {
+  searchFilter = val.toLowerCase();
+  renderSidebar();
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const btn = document.getElementById('sidebarToggleBtn');
+  sb.classList.toggle('collapsed');
+  btn.style.display = sb.classList.contains('collapsed') ? 'flex' : 'none';
+}
+
+// ==================== Context Menu ====================
+function showCtxMenu(e, fileId) {
+  e.preventDefault(); e.stopPropagation();
+  ctxTargetFileId = fileId;
+  const menu = document.getElementById('ctxMenu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('show');
+}
+document.addEventListener('click', () => document.getElementById('ctxMenu').classList.remove('show'));
+
+function ctxAction(action) {
+  document.getElementById('ctxMenu').classList.remove('show');
+  if (!ctxTargetFileId) return;
+  if (action === 'rename') {
+    document.getElementById('renameInput').value = files[ctxTargetFileId]?.name || '';
+    document.getElementById('renameModal').classList.add('show');
+    setTimeout(() => document.getElementById('renameInput').focus(), 100);
+  } else if (action === 'duplicate') {
+    duplicateFile(ctxTargetFileId);
+  } else if (action === 'export') {
+    const f = files[ctxTargetFileId];
+    if (f) downloadText(JSON.stringify({name:f.name,data:f.data},null,2), f.name+'.json', 'application/json');
+  } else if (action === 'versions') {
+    showVersions(ctxTargetFileId);
+  } else if (action === 'delete') {
+    if (confirm('确定删除「' + (files[ctxTargetFileId]?.name||'') + '」？')) deleteFile(ctxTargetFileId);
   }
-  document.getElementById('loadModal').classList.add('show');
-}
-function closeLoadModal() { document.getElementById('loadModal').classList.remove('show'); }
-
-function doLoad(name) {
-  const saved = JSON.parse(localStorage.getItem('mindmaps') || '{}');
-  if (!saved[name]) return;
-  const id = uid();
-  files.push({ id, name, data: saved[name].data });
-  activeFileId = id;
-  closeLoadModal();
-  renderTabs();
-  renderMap();
-  selectNode(saved[name].data.rootId);
-  toast('📂 已加载: ' + name);
 }
 
-function doDelete(name) {
-  const saved = JSON.parse(localStorage.getItem('mindmaps') || '{}');
-  delete saved[name];
-  localStorage.setItem('mindmaps', JSON.stringify(saved));
-  showLoadModal();
-  toast('🗑 已删除: ' + name);
-}
-
-function doLoadJSON() {
-  try {
-    const json = document.getElementById('loadJSON').value.trim();
-    if (!json) return;
-    const obj = JSON.parse(json);
-    const id = uid();
-    const name = obj.name || '导入的导图';
-    files.push({ id, name, data: obj.data || obj });
-    activeFileId = id;
-    closeLoadModal();
-    renderTabs();
-    renderMap();
-    toast('📂 已加载JSON');
-  } catch(e) { toast('❌ JSON格式错误'); }
-}
-
-// ========== Export ==========
-function exportJSON() {
-  const f = getFile();
-  if (!f) return;
-  const json = JSON.stringify({ name: f.name, data: f.data }, null, 2);
-  downloadText(json, f.name + '.json', 'application/json');
-  toast('📤 已导出JSON');
-}
-
-function exportMarkdown() {
-  const f = getFile();
-  if (!f) return;
-  const data = f.data;
-  let md = '';
-  function walk(nodeId, depth) {
-    const node = data.nodes[nodeId];
-    if (!node) return;
-    if (depth === 0) md += '# ' + node.text + '\n\n';
-    else md += '  '.repeat(depth - 1) + '- ' + node.text + '\n';
-    node.children.forEach(c => walk(c, depth + 1));
+// ==================== Version Panel ====================
+function showVersions(fileId) {
+  const f = files[fileId];
+  const panel = document.getElementById('versionPanel');
+  const list = document.getElementById('versionList');
+  if (!f || !f.versions.length) {
+    panel.classList.remove('open');
+    toast('暂无版本记录，点击保存创建第一个版本');
+    return;
   }
-  walk(data.rootId, 0);
-  downloadText(md, f.name + '.md', 'text/markdown');
-  toast('📝 已导出Markdown');
+  list.innerHTML = `<h4>📜 ${esc(f.name)} — 版本历史</h4>` +
+    f.versions.slice().reverse().map((v, ri) => {
+      const idx = f.versions.length - 1 - ri;
+      const d = new Date(v.ts);
+      const time = d.toLocaleDateString('zh-CN') + ' ' + d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      const nc = Object.keys(v.data.nodes).length;
+      return `
+        <div class="version-item" onclick="restoreVersion('${fileId}',${idx})">
+          <div>
+            <div class="ver-time">${time}</div>
+            <div class="ver-label">${v.label || ''} · ${nc} 节点</div>
+          </div>
+          <span class="ver-restore">恢复 ↩</span>
+        </div>
+      `;
+    }).join('');
+  panel.classList.add('open');
 }
 
-function downloadText(text, filename, mime) {
-  const blob = new Blob([text], { type: mime });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = filename;
-  a.click(); URL.revokeObjectURL(a.href);
+// ==================== Rename Modal ====================
+function closeRenameModal() { document.getElementById('renameModal').classList.remove('show'); }
+function doRename() {
+  const name = document.getElementById('renameInput').value.trim();
+  if (name && ctxTargetFileId) renameFile(ctxTargetFileId, name);
+  closeRenameModal();
 }
-
-// ========== MCP Integration ==========
-// Listen for messages from parent (MCP load)
-window.addEventListener('message', (e) => {
-  if (e.data?.type === 'mindmap-load') {
-    const { name, data } = e.data;
-    const id = uid();
-    files.push({ id, name, data });
-    activeFileId = id;
-    renderTabs();
-    renderMap();
-    toast('📂 MCP加载: ' + name);
-  }
+document.getElementById('renameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doRename();
+  if (e.key === 'Escape') closeRenameModal();
 });
 
-// ========== Utils ==========
+// ==================== Import Modal ====================
+function showImportModal() { document.getElementById('importModal').classList.add('show'); }
+function closeImportModal() { document.getElementById('importModal').classList.remove('show'); }
+function doImport() {
+  try {
+    const raw = document.getElementById('importJSON').value.trim();
+    const obj = JSON.parse(raw);
+    const id = uid();
+    const name = obj.name || '导入的导图';
+    files[id] = { name, data: obj.data || obj, versions: [], updatedAt: Date.now(), createdAt: Date.now() };
+    switchToFile(id);
+    autoSaveAll();
+    closeImportModal();
+    toast('📂 已导入: ' + name);
+  } catch(e) { toast('❌ JSON 格式错误'); }
+}
+
+// ==================== Export ====================
+function exportJSON() {
+  const f = files[activeFileId]; if (!f) return;
+  downloadText(JSON.stringify({name:f.name,data:f.data},null,2), f.name+'.json', 'application/json');
+  toast('📤 已导出 JSON');
+}
+function exportMarkdown() {
+  const f = files[activeFileId]; if (!f) return;
+  let md = '';
+  function walk(nid, d) {
+    const n = f.data.nodes[nid]; if (!n) return;
+    if (d===0) md += '# '+n.text+'\n\n';
+    else md += '  '.repeat(d-1)+'- '+n.text+'\n';
+    n.children.forEach(c => walk(c, d+1));
+  }
+  walk(f.data.rootId, 0);
+  downloadText(md, f.name+'.md', 'text/markdown');
+  toast('📝 已导出 Markdown');
+}
+function downloadText(t, fn, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([t],{type:mime}));
+  a.download = fn; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ==================== Status ====================
+function updateStatus() {
+  const f = files[activeFileId];
+  const dot = document.getElementById('statusDot');
+  const saveTxt = document.getElementById('statusSave');
+  const nodesTxt = document.getElementById('statusNodes');
+  const depthTxt = document.getElementById('statusDepth');
+  const fileTxt = document.getElementById('statusFile');
+  if (!f) {
+    fileTxt.textContent = '—'; nodesTxt.textContent = '—'; depthTxt.textContent = '—';
+    return;
+  }
+  dot.className = 'status-dot ' + (isDirty ? 'unsaved' : 'saved');
+  saveTxt.textContent = isDirty ? '未保存' : '已保存';
+  const nc = Object.keys(f.data.nodes).length;
+  nodesTxt.textContent = nc + ' 个节点';
+  // Max depth
+  let maxD = 0;
+  function getD(nid, d) {
+    maxD = Math.max(maxD, d);
+    const n = f.data.nodes[nid]; if (n) n.children.forEach(c => getD(c, d+1));
+  }
+  getD(f.data.rootId, 0);
+  depthTxt.textContent = maxD + ' 层';
+  fileTxt.textContent = f.name;
+}
+
+// ==================== Utils ====================
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s/60) + ' 分钟前';
+  if (s < 86400) return Math.floor(s/3600) + ' 小时前';
+  return Math.floor(s/86400) + ' 天前';
 }
 
-// ========== Init ==========
-newFile('中心主题');
-// Center view
-panX = 100; panY = 0;
-applyTransform();
+// ==================== Init ====================
+loadAllFiles();
 </script>
 </body>
 </html>
