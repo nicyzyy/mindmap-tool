@@ -460,6 +460,8 @@ function deleteFile(id) {
     else { activeFileId = null; newFile(); }
   }
   autoSaveAll(); renderSidebar();
+  // Delete from server
+  fetch(API + '/files/' + id, { method: 'DELETE' }).catch(() => {});
 }
 
 function duplicateFile(id) {
@@ -494,33 +496,115 @@ function restoreVersion(fileId, versionIdx) {
   toast('⏪ 已恢复'); renderSidebar(); showVersions(fileId);
 }
 
-// ==================== Save/Load ====================
+// ==================== Save/Load — Server-backed ====================
+const API = window.location.origin + '/api';
+let syncInProgress = false;
+
 function saveCurrentFile() {
   if (!activeFileId || !files[activeFileId]) return;
   saveVersion(activeFileId, '手动保存');
   isDirty = false;
-  autoSaveAll(); updateStatus();
+  saveToLocal();
+  syncFileToServer(activeFileId);
+  updateStatus();
   toast('✅ 已保存 v' + files[activeFileId].versions.length);
   renderSidebar();
 }
 
-function autoSaveAll() {
-  localStorage.setItem('mindflow_files', JSON.stringify(files));
-  localStorage.setItem('mindflow_active', activeFileId || '');
+function saveToLocal() {
+  try {
+    localStorage.setItem('mindflow_files', JSON.stringify(files));
+    localStorage.setItem('mindflow_active', activeFileId || '');
+  } catch(e) {}
 }
 
-function loadAllFiles() {
+function autoSaveAll() {
+  saveToLocal();
+  debouncedServerSync();
+}
+
+let serverSyncTimer = null;
+function debouncedServerSync() {
+  if (serverSyncTimer) clearTimeout(serverSyncTimer);
+  serverSyncTimer = setTimeout(() => syncAllToServer(), 3000);
+}
+
+async function syncFileToServer(id) {
+  const f = files[id]; if (!f) return;
+  try {
+    await fetch(API + '/files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...f })
+    });
+  } catch(e) { console.warn('Server sync failed:', e); }
+}
+
+async function syncAllToServer() {
+  if (syncInProgress) return;
+  syncInProgress = true;
+  try {
+    await fetch(API + '/files/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files })
+    });
+  } catch(e) { console.warn('Bulk sync failed:', e); }
+  syncInProgress = false;
+}
+
+async function loadAllFiles() {
+  // Try server first
+  let serverFiles = null;
+  try {
+    const res = await fetch(API + '/files');
+    if (res.ok) {
+      serverFiles = await res.json();
+      if (serverFiles && Object.keys(serverFiles).length > 0) {
+        console.log('Loaded from server:', Object.keys(serverFiles).length, 'files');
+      }
+    }
+  } catch(e) { console.warn('Server load failed, using local:', e); }
+
+  // Also load local
+  let localFiles = null;
   try {
     const raw = localStorage.getItem('mindflow_files');
-    if (raw) {
-      files = JSON.parse(raw);
-      const act = localStorage.getItem('mindflow_active');
-      if (act && files[act]) { switchToFile(act); return; }
-      const ids = Object.keys(files);
-      if (ids.length) { switchToFile(ids[0]); return; }
-    }
+    if (raw) localFiles = JSON.parse(raw);
   } catch(e) {}
-  newFile('我的思维导图');
+
+  // Merge: server wins for same ID, but keep local-only files
+  files = {};
+  if (serverFiles) Object.entries(serverFiles).forEach(([id,f]) => { files[id] = f; });
+  if (localFiles) {
+    Object.entries(localFiles).forEach(([id,f]) => {
+      if (!files[id]) {
+        // Local-only file, keep it and sync to server
+        files[id] = f;
+      } else if (f.updatedAt > (files[id].updatedAt || 0)) {
+        // Local is newer, use local
+        files[id] = f;
+      }
+    });
+  }
+
+  saveToLocal();
+
+  // If we have local-only files, sync them up
+  if (localFiles && serverFiles) {
+    const localOnly = Object.keys(localFiles).filter(id => !serverFiles[id]);
+    if (localOnly.length) syncAllToServer();
+  }
+
+  if (Object.keys(files).length === 0) {
+    newFile('我的思维导图');
+    return;
+  }
+
+  const act = localStorage.getItem('mindflow_active');
+  if (act && files[act]) { switchToFile(act); return; }
+  const ids = Object.keys(files);
+  if (ids.length) switchToFile(ids[0]);
 }
 
 // ==================== MCP ====================
